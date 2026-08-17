@@ -19,6 +19,7 @@
 	import DataControls from './Settings/DataControls.svelte';
 	import Usage from './Settings/Usage.svelte';
 	import ArchivedChats from './Settings/ArchivedChats.svelte';
+	import SubagentsCreated from './Settings/SubagentsCreated.svelte';
 	import Personalization from './Settings/Personalization.svelte';
 	import Search from '../icons/Search.svelte';
 	import Connections from './Settings/Connections.svelte';
@@ -112,6 +113,7 @@
 		data_controls: 'Data',
 		usage: 'Data',
 		archived_chats: 'Data',
+		subagents_created: 'Preferences',
 		account: 'Profile',
 		about: 'Profile'
 	};
@@ -536,6 +538,22 @@
 				'unarchive',
 				'unarchive chat',
 				'unarchive chats'
+			]
+		},
+		{
+			id: 'subagents_created',
+			title: 'Sub-agents',
+			keywords: [
+				'sub-agents',
+				'subagent',
+				'subagents',
+				'created sub-agents',
+				'created subagents',
+				'delegate',
+				'delegation',
+				'manage sub-agents',
+				'system prompt',
+				'systemprompt'
 			]
 		},
 		{
@@ -1085,6 +1103,19 @@
 							<ArchiveBox className="size-3.5" strokeWidth="2" />
 							<span>{$i18n.t('Archived Chats')}</span>
 						</button>
+					{:else if tabId === 'subagents_created'}
+						<button
+							role="tab"
+							aria-controls="tab-subagents-created"
+							aria-selected={selectedTab === 'subagents_created'}
+							class={tabButtonClass(selectedTab === 'subagents_created')}
+							on:click={() => {
+								selectedTab = 'subagents_created';
+							}}
+						>
+							<WrenchAlt className="size-3.5" strokeWidth="2" />
+							<span>{$i18n.t('Sub-agents')}</span>
+						</button>
 					{:else if tabId === 'account'}
 						<button
 							role="tab"
@@ -1211,6 +1242,8 @@
 				<Usage />
 			{:else if selectedTab === 'archived_chats'}
 				<ArchivedChats />
+			{:else if selectedTab === 'subagents_created'}
+				<SubagentsCreated />
 			{:else if selectedTab === 'account'}
 				<Account
 					saveHandler={() => {

@@ -355,6 +355,9 @@ async def delegate(
         user_message_id = str(uuid4())
         assistant_message_id = str(uuid4())
         prompt = f'{task}\n\n## Context\n{context}' if context else task
+        subagent_system_prompt = (
+            str(config.get('subagents.system_prompt') or '').strip() or DEFAULT_SUBAGENT_SYSTEM_PROMPT
+        )
         chat = await Chats.insert_new_chat(
             chat_id,
             user.id,
@@ -397,6 +400,7 @@ async def delegate(
                 'parent_message_id': parent_message_id,
                 'delegation_id': delegation_id,
                 'mode': mode,
+                'subagent_system_prompt': subagent_system_prompt,
             },
         )
         if not chat:
@@ -415,8 +419,11 @@ async def delegate(
             child_request = _build_request(request, user.id, internal=True)
             child_request.state.max_tool_call_iterations = max_iterations
             parent_system_prompt = run.get('system_prompt') or ''
+            stored_prompt = ((chat.meta or {}).get('subagent_system_prompt') or '').strip()
             subagent_system_prompt = (
-                str(config.get('subagents.system_prompt') or '').strip() or DEFAULT_SUBAGENT_SYSTEM_PROMPT
+                stored_prompt
+                or str(config.get('subagents.system_prompt') or '').strip()
+                or DEFAULT_SUBAGENT_SYSTEM_PROMPT
             )
             form_data = {
                 'model': run['model_id'],

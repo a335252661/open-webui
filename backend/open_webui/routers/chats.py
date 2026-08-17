@@ -1298,6 +1298,63 @@ async def compact_chat_by_id(
 
 
 ############################
+# Subagents
+############################
+
+
+class SubagentChatResponse(BaseModel):
+    id: str
+    title: str
+    created_at: int
+    updated_at: int
+    parent_chat_id: str | None = None
+    system_prompt: str = ''
+
+
+class SubagentSystemPromptForm(BaseModel):
+    system_prompt: str = ''
+
+
+@router.get('/subagents', response_model=list[SubagentChatResponse])
+async def get_subagents(
+    user=Depends(get_verified_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    chats = await Chats.get_subagent_chats_by_user_id(user.id, db=db)
+    return [
+        SubagentChatResponse(
+            id=chat.id,
+            title=chat.title,
+            created_at=chat.created_at,
+            updated_at=chat.updated_at,
+            parent_chat_id=(chat.meta or {}).get('parent_chat_id'),
+            system_prompt=(chat.meta or {}).get('subagent_system_prompt') or '',
+        )
+        for chat in chats
+    ]
+
+
+@router.post('/subagents/{id}/system_prompt', response_model=SubagentChatResponse)
+async def update_subagent_system_prompt(
+    id: str,
+    form_data: SubagentSystemPromptForm,
+    user=Depends(get_verified_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    chat = await Chats.update_subagent_system_prompt(id, user.id, form_data.system_prompt, db=db)
+    if not chat:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ERROR_MESSAGES.NOT_FOUND)
+    return SubagentChatResponse(
+        id=chat.id,
+        title=chat.title,
+        created_at=chat.created_at,
+        updated_at=chat.updated_at,
+        parent_chat_id=(chat.meta or {}).get('parent_chat_id'),
+        system_prompt=(chat.meta or {}).get('subagent_system_prompt') or '',
+    )
+
+
+############################
 # GetChatById
 ############################
 

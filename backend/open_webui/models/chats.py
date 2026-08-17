@@ -479,6 +479,44 @@ class ChatTable:
             )
             return list(result.scalars().all())
 
+    async def get_subagent_chats_by_user_id(
+        self, user_id: str, db: AsyncSession | None = None
+    ) -> list[ChatModel]:
+        async with get_async_db_context(db) as session:
+            result = await session.execute(
+                select(Chat)
+                .where(
+                    Chat.user_id == user_id,
+                    Chat.meta['internal'].as_boolean().is_(True),
+                    Chat.meta['type'].as_string() == 'subagent',
+                )
+                .order_by(Chat.updated_at.desc())
+            )
+            return [ChatModel.model_validate(chat) for chat in result.scalars().all()]
+
+    async def update_subagent_system_prompt(
+        self, chat_id: str, user_id: str, system_prompt: str, db: AsyncSession | None = None
+    ) -> ChatModel | None:
+        async with get_async_db_context(db) as session:
+            result = await session.execute(
+                select(Chat).where(
+                    Chat.id == chat_id,
+                    Chat.user_id == user_id,
+                    Chat.meta['internal'].as_boolean().is_(True),
+                    Chat.meta['type'].as_string() == 'subagent',
+                )
+            )
+            chat = result.scalar_one_or_none()
+            if chat is None:
+                return None
+
+            meta = dict(chat.meta or {})
+            meta['subagent_system_prompt'] = system_prompt
+            chat.meta = meta
+            await session.commit()
+
+            return ChatModel.model_validate(chat)
+
     async def get_internal_chat_by_note_id(
         self, note_id: str, user_id: str, db: AsyncSession | None = None
     ) -> ChatModel | None:
